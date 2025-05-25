@@ -26,10 +26,16 @@ router.post("/", async (req, res) => {
     return res.status(201).location(`/contacts/${contact._id}`).json(contact);
   } catch (err) {
     // TODO Error case: Duplicate name
+    if (err.code === 11000)
+      return res.status(422).send(`The name '${req.body.name}' is already taken.`);
 
     // TODO Error case: Missing name
+    if (err.name === "ValidationError" && err.message.includes("name"))
+      return res.status(422).send("New contacts must have a name.");
 
     // TODO Error case: Invalid _id
+    if (err.name === "CastError" && err.path === "_id")
+      return res.status(422).send("Invalid contact id format.");
 
     // Unexpected error
     console.error(err); // For debugging
@@ -52,8 +58,12 @@ router.patch("/:id", async (req, res) => {
     return res.json(updated);
   } catch (err) {
     // TODO Error case: Duplicate name
+    if (err.code === 11000)
+      return res.status(422).send(`The name '${req.body.name}' is already taken.`);
 
     // TODO Error case: Invalid _id
+    if (err.name === "CastError" && err.path === "_id")
+      return res.status(422).send("Invalid contact id format.");
 
     // Unexpected error
     console.error(err); // For debugging
@@ -62,8 +72,7 @@ router.patch("/:id", async (req, res) => {
 });
 
 /**
- * DELETE /api/contacts/:id: Deletes the contact with the given id, if it exist. Returns a 204 response
- * either way.
+ * DELETE /api/contacts/:id: Deletes the contact with the given id, if it exist. Returns a 204 response either way.
  */
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
@@ -73,6 +82,8 @@ router.delete("/:id", async (req, res) => {
     return res.sendStatus(204);
   } catch (err) {
     // TODO Error case: Invalid _id
+    if (err.name === "CastError" && err.path === "_id")
+      return res.status(422).send("Invalid contact id format.");
 
     // Unexpected error
     console.error(err); // For debugging

@@ -1,6 +1,8 @@
 import { v4 as uuid } from "uuid";
 import { initialContacts } from "./initial-contacts.js";
 
+import { Contact } from "./contacts-schema.js"
+
 const contacts = [...initialContacts];
 
 /**
@@ -9,7 +11,9 @@ const contacts = [...initialContacts];
  * @returns a list of contacts
  */
 export async function retrieveContacts() {
-  return contacts;
+  return await Contact.find();
+
+  // return contacts;
 }
 
 /**
@@ -20,14 +24,18 @@ export async function retrieveContacts() {
  * @throws error if the contact has no name, or a non-unique name.
  */
 export async function createContact(contact) {
-  if (!contact?.name) throw "New contacts must have a name.";
-
-  const existingContact = contacts.find((c) => c.name === contact.name);
-  if (existingContact) throw `The name '${contact.name}' is already taken.`;
-
-  const dbContact = { _id: uuid(), ...contact };
-  contacts.push(dbContact);
+  const dbContact = new Contact(contact);
+  await dbContact.save();
   return dbContact;
+
+  // if (!contact?.name) throw "New contacts must have a name.";
+
+  // const existingContact = contacts.find((c) => c.name === contact.name);
+  // if (existingContact) throw `The name '${contact.name}' is already taken.`;
+
+  // const dbContact = { _id: uuid(), ...contact };
+  // contacts.push(dbContact);
+  // return dbContact;
 }
 
 /**
@@ -38,20 +46,23 @@ export async function createContact(contact) {
  * @throws error if trying to update the contact's name to another name that's already taken.
  */
 export async function updateContact(id, contact) {
-  const index = contacts.findIndex((c) => c._id === id);
-  if (index < 0) return false;
+  const dbContact = await Contact.findByIdAndUpdate(id, contact, { new: true, runValidators: true });
+  return dbContact;
 
-  delete contact._id; // No overwriting the id!
+  // const index = contacts.findIndex((c) => c._id === id);
+  // if (index < 0) return false;
 
-  // Check for duplicate name if required
-  if (contact?.name) {
-    const existingName = contacts.find((c) => c._id !== id && c.name === contact.name);
-    if (existingName) throw `The name '${contact.name}' is already taken.`;
-  }
+  // delete contact._id; // No overwriting the id!
 
-  contacts[index] = { ...contacts[index], ...contact };
+  // // Check for duplicate name if required
+  // if (contact?.name) {
+  //   const existingName = contacts.find((c) => c._id !== id && c.name === contact.name);
+  //   if (existingName) throw `The name '${contact.name}' is already taken.`;
+  // }
 
-  return contacts[index];
+  // contacts[index] = { ...contacts[index], ...contact };
+
+  // return contacts[index];
 }
 
 /**
@@ -60,8 +71,11 @@ export async function updateContact(id, contact) {
  * @param id the id to search
  */
 export async function deleteContact(id) {
-  const index = contacts.findIndex((c) => c._id === id);
-  if (index < 0) return;
+  const dbContact = await Contact.findByIdAndDelete(id);
+  return dbContact;
+  
+  // const index = contacts.findIndex((c) => c._id === id);
+  // if (index < 0) return;
 
-  contacts.splice(index, 1);
+  // contacts.splice(index, 1);
 }
